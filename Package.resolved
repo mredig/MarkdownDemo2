@@ -1,5 +1,5 @@
 {
-  "originHash" : "684c50269bcdbd589e3dd6e37ae6ff8d3108b7df663972e84cae6003bd0c7b51",
+  "originHash" : "18b4013ee3b758abef6d0ef39b97fad8b8c0842c11d2916d943e732a8167f716",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -285,8 +285,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mredig/yaHDSL.git",
       "state" : {
-        "branch" : "0.0.5h",
-        "revision" : "f64fbb4e6827c37d4e7eeb9b4c5f06c3c55379eb"
+        "branch" : "0.0.6b",
+        "revision" : "42f0ce3a978114e6205547ac44d577e8b8c412fe"
       }
     }
   ],

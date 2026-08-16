@@ -58,9 +58,9 @@ public struct LibMarkdownDemo2Entry {
 			HTTPResponse.Status.ok
 		}
 
-		let navigationGroup = router.group("")
+		let navigationGroup = router.group("/")
 		let navigationController = NavigatorController<BasicRequestContext>()
-		navigationController.addRoutes(router.group("/"))
+		navigationController.addRoutes(navigationGroup)
 
 		print("Routes:")
 		router.routes.forEach { print($0) }

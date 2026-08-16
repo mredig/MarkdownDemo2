@@ -17,7 +17,7 @@ let package = Package(
 //		.package(url: "https://github.com/hummingbird-project/hummingbird-fluent", .upToNextMajor(from: "2.0.0")),
 //		.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", .upToNextMajor(from: "4.7.0")),
 		.package(url: "https://github.com/mredig/PizzaMacros.git", .upToNextMajor(from: "0.1.0")),
-		.package(url: "https://github.com/mredig/yaHDSL.git", branch: "0.0.5h"),
+		.package(url: "https://github.com/mredig/yaHDSL.git", branch: "0.0.6b"),
 		.package(url: "https://github.com/ibrahimcetin/SwiftGitX.git", from: "0.4.0"),
 		.package(url: "https://github.com/JohnSundell/Ink.git", from: "0.6.0")
 	],
@@ -41,7 +41,8 @@ let package = Package(
 //				.product(name: "HummingbirdFluent", package: "hummingbird-fluent"),
 //				.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
 				"PizzaMacros",
-				"yaHDSL",
+				.product(name: "yaHDSL", package: "yaHDSL"),
+				.product(name: "yaHDSL-Utilities", package: "yaHDSL"),
 				.product(name: "Logging", package: "swift-log"),
 			]
 		)

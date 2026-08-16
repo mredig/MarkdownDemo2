@@ -8,6 +8,6 @@ struct NavigatorController<C: RequestContext> {
 	}
 
 	private func rootPath(from request: Request, context: C) async throws -> some ResponseGenerator {
-		"Hello world"
+		IndexPage()
 	}
 }
