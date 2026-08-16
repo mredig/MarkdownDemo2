@@ -35,7 +35,6 @@ struct MarkdownDemo2: AsyncParsableCommand {
 			serverName: serverName,
 			serverAddress: address,
 			serverPort: port,
-			markdownDirectory: .currentDirectory(),
 			logLevel: verbosityThreshold)
 
 		let markdownDemo = await LibMarkdownDemo2Entry(config)

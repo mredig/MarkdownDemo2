@@ -9,20 +9,17 @@ public struct LibMarkdownDemo2Entry {
 		public let serverName: String
 		public let serverAddress: String
 		public let serverPort: UInt16
-		public let markdownDirectory: URL
 		public let logLevel: Logger.Level
 
 		public init(
 			serverName: String,
 			serverAddress: String,
 			serverPort: UInt16,
-			markdownDirectory: URL,
 			logLevel: Logger.Level
 		) {
 			self.serverName = serverName
 			self.serverAddress = serverAddress
 			self.serverPort = serverPort
-			self.markdownDirectory = markdownDirectory
 			self.logLevel = logLevel
 		}
 	}
@@ -59,7 +56,7 @@ public struct LibMarkdownDemo2Entry {
 		}
 
 		let navigationGroup = router.group("/")
-		let navigationController = NavigatorController<BasicRequestContext>()
+		let navigationController = NavigatorController<BasicRequestContext>(baseDirectory: .currentDirectory(), siteTitle: config.serverName)
 		navigationController.addRoutes(navigationGroup)
 
 		print("Routes:")
