@@ -21,6 +21,8 @@ struct NavigationPage: HTMLContentProvider {
 	}
 
 	func content() throws -> Group {
+		H1(title)
+
 		if directoryContent.directories.isOccupied {
 			H3("Directories")
 			for dir in directoryContent.directories {

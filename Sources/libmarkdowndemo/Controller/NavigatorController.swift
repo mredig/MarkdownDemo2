@@ -17,11 +17,17 @@ struct NavigatorController<C: RequestContext> {
 		let file = request.uri.queryParameters.get("file")
 
 		if let file {
-			throw NSError(domain: "Foo", code: 847)
+			let fileURL = baseDirectory
+				.appending(path: path.joined(separator: "/"))
+				.appending(component: file)
+
+			return try PageTemplate(content: FilePage(breadcrumbPath: path, fileURL: fileURL))
+				.response(from: request, context: context)
 		} else {
 			let contents = try contentsOf(path: path)
 
-			return PageTemplate(content: NavigationPage(directoryContent: contents, givenTitle: siteTitle))
+			return try PageTemplate(content: NavigationPage(directoryContent: contents, givenTitle: siteTitle))
+				.response(from: request, context: context)
 		}
 	}
 

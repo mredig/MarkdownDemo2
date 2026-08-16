@@ -41,6 +41,7 @@ let package = Package(
 //				.product(name: "HummingbirdFluent", package: "hummingbird-fluent"),
 //				.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
 				"PizzaMacros",
+				"Ink",
 				.product(name: "yaHDSL", package: "yaHDSL"),
 				.product(name: "yaHDSL-Utilities", package: "yaHDSL"),
 				.product(name: "Logging", package: "swift-log"),

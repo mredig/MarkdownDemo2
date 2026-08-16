@@ -59,8 +59,6 @@ struct PageTemplate<Content: HTMLContentProvider, FooterContent: HTMLNode>: HTML
 				let breadcrumbs = breadcrumbParagraph
 				breadcrumbs
 				
-				H1(title)
-				
 				try content.content()
 				
 				Hr()
