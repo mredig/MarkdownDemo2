@@ -1,5 +1,5 @@
 import Foundation
-import Ink
+import Down
 import yaHDSL
 
 struct FilePage: HTMLContentProvider {
@@ -11,11 +11,10 @@ struct FilePage: HTMLContentProvider {
 
 	func content() throws -> Group {
 		let markdownData = try Data(contentsOf: fileURL)
+		let markdownString = String(decoding: markdownData, as: UTF8.self)
 
-		let parser = MarkdownParser()
+		let down = Down(markdownString: markdownString)
 
-		let result = parser.parse(String(decoding: markdownData, as: UTF8.self))
-
-		result.html
+		try down.toHTML([.default])
 	}
 }
