@@ -54,7 +54,7 @@ struct NavigatorController<C: RequestContext> {
 			}
 		}
 		.mapValues {
-			$0.map(\.lastPathComponent)
+			$0.map(\.lastPathComponent).sorted()
 		}
 
 		return NavigationPage.DirectoryContent(
