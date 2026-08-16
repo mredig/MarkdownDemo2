@@ -21,7 +21,7 @@ struct NavigatorController<C: RequestContext> {
 		} else {
 			let contents = try contentsOf(path: path)
 
-			return IndexPage(content: contents, givenTitle: siteTitle)
+			return PageTemplate(content: IndexPage(directoryContent: contents, givenTitle: siteTitle))
 		}
 	}
 
@@ -36,6 +36,8 @@ struct NavigatorController<C: RequestContext> {
 		let contents = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey])
 
 		let filteredContent = try contents.nfurcate { url in
+			guard url.lastPathComponent.hasPrefix(".") == false else { return PathType.discard }
+
 			let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
 			if values.isRegularFile == true {
 				return PathType.files
