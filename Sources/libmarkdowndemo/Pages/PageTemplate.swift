@@ -22,6 +22,14 @@ struct PageTemplate<Content: HTMLContentProvider, FooterContent: HTMLNode>: HTML
 	var head: any HeadProtocol {
 		Head {
 			Title(title)
+
+			Meta(attributes: [.charset: AttributeValue.string("utf-8")])
+			Meta(attributes: [
+				.name: AttributeValue.string("viewport"),
+				.content: AttributeValue.list(["width=device-width", "initial-scale=1", "user-scalable=no"]),
+			])
+
+			Link(href: URL(string: "/css/modern.css"), rel: .Link.stylesheet)
 		}
 	}
 
@@ -29,7 +37,7 @@ struct PageTemplate<Content: HTMLContentProvider, FooterContent: HTMLNode>: HTML
 		// for some reason, the result builder couldn't handle this, so I had to write it more manually
 		var p = P()
 		p.addChildNode(A("Home", href: "/"))
-		p.addChildNode("/")
+		p.addChildNode(" / ")
 
 		var builder: [String] = []
 
@@ -39,7 +47,7 @@ struct PageTemplate<Content: HTMLContentProvider, FooterContent: HTMLNode>: HTML
 
 			let linkPath = builder.joined(separator: "/")
 			p.addChildNode(A(href: "?directory=\(linkPath)") { ancestorDirectory })
-			p.addChildNode("/")
+			p.addChildNode(" / ")
 		}
 
 		return p

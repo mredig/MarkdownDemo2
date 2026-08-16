@@ -1,0 +1,172 @@
+@import url('reset.css');
+
+
+html {
+	background-color: #F5F5F5;
+}
+
+body {
+	width: 900px;
+	margin: 20px auto 200px;
+	font: 11pt "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+	color: #333;
+}
+
+.btn-default {
+
+	float: right;
+}
+
+input.form-control {
+	float: right;
+}
+
+
+
+a:hover {
+	text-decoration: underline;
+	color: #3368CD;
+}
+a:active {
+	color: #0D2E98;
+	text-decoration: none;
+}
+a {
+	text-decoration: none;
+	color: #0F55B8;
+	font-family: "Helvetica Neue Light", "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+}
+
+p {
+	margin-bottom: 5px;
+}
+
+h1,h2,h3,h4,h5,h6 {
+	margin-top: 10px;
+}
+
+h1 {
+	font-size: 3em;
+	border-bottom-style: solid;
+	border-bottom-width: 3px;
+	border-left-width: 3px;
+	margin: .6563em 0;
+	padding-bottom: 6px;
+}
+
+h2 {
+	font-size: 2em;
+	margin: .875em 0;
+	border-bottom-style: solid;
+	border-bottom-width: 2px;
+}
+
+h3 {
+	font-size: 1.5em;
+	margin: 1em 0;
+	border-bottom-style: solid;
+	border-bottom-width: 2px;
+}
+
+h4 {
+    font-size: 1.2857em;
+    margin: 1.1667em 0;
+}
+
+h5 {
+    font-size: 1.15em;
+    margin: 1.3em 0;
+
+}
+
+h6 {
+    font-size: 1em;
+    margin: 1.5em 0;
+
+}
+
+ul ul,ul ol {
+    margin-bottom: .4em;
+}
+
+ul,ol {
+	margin-top: 5px;
+	margin-bottom: 20px;
+}
+
+ol li {
+	margin-bottom: 2px;
+	margin-left: 1.5em;
+}
+
+ul li {
+	margin-bottom: 2px;
+	margin-left: 1.5em;
+}
+
+ul {
+	list-style: disc outside none;
+}
+
+ol {
+	list-style: decimal outside none;
+}
+
+code,pre {
+	font-family: "Courier New", Courier, mono;
+	background-color: #484848;
+	color: #D2D2D2;
+	padding: 7px;
+	margin: 3px;
+	display: inline-block;
+	/*max-width: 100%;*/
+	border-color: white;
+	border-radius: 15px;
+	border-style: solid;
+	border-width: 1px;
+}
+
+pre code {
+	border-style: none;
+	max-width: 100%;
+	background-color: rgba(0,0,0,0);
+}
+
+
+em {
+	font-style: italic;
+	opacity: 1;
+	font-family: "Helvetica Neue UltraLight", "Helvetica Neue Light", "Helvetica Neue", Arial, Helvetica, Geneva, sans-serif;
+	color: #AA1414;
+}
+
+strong {
+	font-weight: bold;
+	font-style: italic;
+	color: #AA1414;
+}
+
+#markdownRepoLiveSearch {
+	clear: both;
+	float: right;
+	max-width: 500px;
+	z-index: 100;
+	background-color: white;
+	position: relative;
+	top: 0;
+	right: 0;
+	display: inline-block;
+	padding-right: 20px;
+}
+
+.mdrTimestamp {
+	font: 0.65em "Courier New", Courier, mono;
+	clear: both;
+	float: right;
+}
+
+.mdrPermalink{
+	font: 0.65em "Courier New", Courier, mono;
+	clear: both;
+	float: right;
+}
