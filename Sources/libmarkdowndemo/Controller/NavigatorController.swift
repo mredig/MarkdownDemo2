@@ -21,7 +21,7 @@ struct NavigatorController<C: RequestContext> {
 		} else {
 			let contents = try contentsOf(path: path)
 
-			return PageTemplate(content: IndexPage(directoryContent: contents, givenTitle: siteTitle))
+			return PageTemplate(content: NavigationPage(directoryContent: contents, givenTitle: siteTitle))
 		}
 	}
 
@@ -31,7 +31,7 @@ struct NavigatorController<C: RequestContext> {
 		case discard
 	}
 
-	private func contentsOf(path: [String]) throws -> IndexPage.DirectoryContent {
+	private func contentsOf(path: [String]) throws -> NavigationPage.DirectoryContent {
 		let dir = baseDirectory.appending(path: path.joined(separator: "/"))
 		let contents = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey])
 
@@ -51,7 +51,7 @@ struct NavigatorController<C: RequestContext> {
 			$0.map(\.lastPathComponent)
 		}
 
-		return IndexPage.DirectoryContent(
+		return NavigationPage.DirectoryContent(
 			path: path,
 			directories: filteredContent[.directories] ?? [],
 			files: filteredContent[.files] ?? [])

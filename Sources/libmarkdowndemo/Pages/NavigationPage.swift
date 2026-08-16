@@ -1,14 +1,7 @@
 import Foundation
 import yaHDSL
 
-protocol HTMLContentProvider {
-	var title: String { get }
-	var breadcrumbPath: [String] { get }
-	@HTMLContainerNodeBuilder
-	func content() throws -> Group
-}
-
-struct IndexPage: HTMLContentProvider {
+struct NavigationPage: HTMLContentProvider {
 	let directoryContent: DirectoryContent
 
 	let givenTitle: String?
@@ -36,7 +29,7 @@ struct IndexPage: HTMLContentProvider {
 				}
 			}
 		}
-		
+
 		if directoryContent.files.isOccupied {
 			H3("Files")
 			Ul {
