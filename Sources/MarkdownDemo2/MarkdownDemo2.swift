@@ -1,10 +1,5 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-//
-// Swift Argument Parser
-// https://swiftpackageindex.com/apple/swift-argument-parser/documentation
-
 import ArgumentParser
+import Foundation
 import libmarkdowndemo
 import Logging
 
@@ -30,11 +25,27 @@ struct MarkdownDemo2: AsyncParsableCommand {
 		})
 	var verbosityThreshold: Logger.Level = .info
 
+	@Option(
+		name: [.customShort("c"), .customLong("cache")],
+		help: "Local checkout cache - where the remote repo will be stored locally.",
+		transform: { URL(filePath: $0) })
+	var localCheckoutCache: URL?
+
+	@Option(
+		name: [.customShort("r"), .customLong("remote")],
+		help: "Remote repo - a repo with markdown notes accessible via git",
+		transform: {
+			try URL(string: $0).unwrap("Must provide a legitimate remote url")
+		})
+	var remoteRepo: URL
+
     mutating func run() async throws {
-		let config = LibMarkdownDemo2Entry.Config(
+		let config = try LibMarkdownDemo2Entry.Config(
 			serverName: serverName,
 			serverAddress: address,
 			serverPort: port,
+			localCheckoutCache: localCheckoutCache,
+			remoteMarkdownGitRepo: remoteRepo,
 			logLevel: verbosityThreshold)
 
 		let markdownDemo = await LibMarkdownDemo2Entry(config)

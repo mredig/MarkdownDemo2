@@ -9,17 +9,28 @@ public struct LibMarkdownDemo2Entry {
 		public let serverName: String
 		public let serverAddress: String
 		public let serverPort: UInt16
+		public let localCheckoutCache: URL
+		public let remoteMarkdownGitRepo: URL
 		public let logLevel: Logger.Level
 
 		public init(
 			serverName: String,
 			serverAddress: String,
 			serverPort: UInt16,
+			localCheckoutCache: URL?,
+			remoteMarkdownGitRepo: URL,
 			logLevel: Logger.Level
-		) {
+		) throws {
 			self.serverName = serverName
 			self.serverAddress = serverAddress
 			self.serverPort = serverPort
+
+			let applicationSupportDir = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+
+			self.localCheckoutCache = localCheckoutCache ?? applicationSupportDir
+				.appending(component: "pizza.appsby.MarkdownDemo2")
+				.appending(component: "Checkout", directoryHint: .isDirectory)
+			self.remoteMarkdownGitRepo = remoteMarkdownGitRepo
 			self.logLevel = logLevel
 		}
 	}
@@ -34,7 +45,9 @@ public struct LibMarkdownDemo2Entry {
 		let logger = createLogger(labelled: "MarkdownDemo2")
 		logger.info("Starting MarkdownDemo2")
 
-		let router = configureRoutes()
+		logger.info("Using \(config.localCheckoutCache.path(percentEncoded: false)) for local checkout")
+
+		let router = try configureRoutes()
 
 		let config = ApplicationConfiguration(
 			address: .hostname(config.serverAddress, port: Int(config.serverPort)),
@@ -45,7 +58,7 @@ public struct LibMarkdownDemo2Entry {
 		try await app.runService()
 	}
 
-	private func configureRoutes() -> Router<BasicRequestContext> {
+	private func configureRoutes() throws -> Router<BasicRequestContext> {
 		let router = Router(context: BasicRequestContext.self, options: .autoGenerateHeadEndpoints)
 
 		router.add(middleware: LogRequestsMiddleware(.info))
@@ -55,8 +68,10 @@ public struct LibMarkdownDemo2Entry {
 			HTTPResponse.Status.ok
 		}
 
+		try FileManager.default.createDirectory(at: config.localCheckoutCache, withIntermediateDirectories: true)
+
 		let navigationGroup = router.group("/")
-		let navigationController = NavigatorController<BasicRequestContext>(baseDirectory: .currentDirectory(), siteTitle: config.serverName)
+		let navigationController = NavigatorController<BasicRequestContext>(baseDirectory: config.localCheckoutCache, siteTitle: config.serverName)
 		navigationController.addRoutes(navigationGroup)
 
 		print("Routes:")
