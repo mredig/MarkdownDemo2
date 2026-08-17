@@ -18,6 +18,7 @@ struct NavigatorController<C: RequestContext> {
 		group
 			.get("", use: rootPath)
 			.get("livesearch", use: performLiveSearch)
+			.get("image", use: imageLoader)
 	}
 
 	private func rootPath(from request: Request, context: C) async throws -> some ResponseGenerator {
@@ -43,6 +44,33 @@ struct NavigatorController<C: RequestContext> {
 			return try PageTemplate(content: NavigationPage(directoryContent: contents, givenTitle: siteTitle))
 				.response(from: request, context: context)
 		}
+	}
+
+	private func imageLoader(from request: Request, context: C) async throws -> some ResponseGenerator {
+		let directory = request.uri.queryParameters.get("directory")
+		let path = directory?.split(separator: "/").map(String.init) ?? []
+		guard let file = request.uri.queryParameters.get("file") else { throw HTTPError(.notFound, message: "No matching image") }
+
+		let fileURL = baseDirectory
+			.appending(path: path.joined(separator: "/"))
+			.appending(component: file)
+			.resolvingSymlinksInPath()
+
+		try shouldAllowLocalURL(fileURL)
+		let allowedImageTypes = Set(["jpg", "jpeg", "png", "gif"])
+		guard allowedImageTypes.contains(fileURL.pathExtension.lowercased()) else {
+			throw HTTPError(.notFound, message: "Illegal image")
+		}
+
+		let imageData = try Data(contentsOf: fileURL)
+		let imageBytes = ByteBuffer(bytes: imageData)
+		return Response(
+			status: .ok,
+			headers: [
+				.contentType: "image/jpg",
+				.contentLength: "\(imageData.count)"
+			],
+			body: ResponseBody(byteBuffer: imageBytes))
 	}
 
 	private func performLiveSearch(from request: Request, context: C) async throws -> some ResponseGenerator {
