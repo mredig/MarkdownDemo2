@@ -71,7 +71,7 @@ public struct LibMarkdownDemo2Entry {
 		try FileManager.default.createDirectory(at: config.localCheckoutCache, withIntermediateDirectories: true)
 
 		let navigationGroup = router.group("/")
-		let navigationController = NavigatorController<BasicRequestContext>(baseDirectory: config.localCheckoutCache, siteTitle: config.serverName)
+		let navigationController = NavigatorController<BasicRequestContext>(siteTitle: config.serverName, baseDirectory: config.localCheckoutCache)
 		navigationController.addRoutes(navigationGroup)
 
 		print("Routes:")
