@@ -14,6 +14,7 @@ struct NavigatorController<C: RequestContext> {
 	func addRoutes(_ group: RouterGroup<C>) {
 		group
 			.get("", use: rootPath)
+			.get("livesearch", use: performLiveSearch)
 	}
 
 	private func rootPath(from request: Request, context: C) async throws -> some ResponseGenerator {
@@ -38,21 +39,76 @@ struct NavigatorController<C: RequestContext> {
 		}
 	}
 
-	private func shouldAllowLocalURL(_ fileURL: URL) throws {
-		let absoluteFileURL = fileURL.resolvingSymlinksInPath()
+	private func performLiveSearch(from request: Request, context: C) async throws -> some ResponseGenerator {
+		let searchQuery = request.uri.queryParameters.get("search")
 
-		let filePathComponents = absoluteFileURL.pathComponents
+		let foundFiles = try search(query: searchQuery)
 
-		let baseDirPathLength = baseDirectory.pathComponents.count
-
-		guard
-			filePathComponents.count >= baseDirPathLength,
-			filePathComponents.prefix(upTo: baseDirPathLength) == ArraySlice(baseDirectory.pathComponents),
-			case let fileSpecificComponents = filePathComponents[baseDirPathLength...],
-			fileSpecificComponents.allSatisfy({ $0.hasPrefix(".") == false })
-		else {
-			throw HTTPError(.badRequest, message: "Illegal file request")
+		let basePathCount = baseDirectory.pathComponents.count
+		let resultPaths = foundFiles.map {
+			let linkPath = $0
+				.deletingLastPathComponent()
+				.pathComponents
+				.dropFirst(basePathCount)
+				.joined(separator: "/")
+			return LiveSearchResults.Result(name: $0.deletingPathExtension().lastPathComponent, link: "?directory=\(linkPath)&file=\($0.lastPathComponent)")
 		}
+		.sorted { $0.name.lowercased() < $1.name.lowercased() }
+
+		let results = LiveSearchResults(results: resultPaths)
+
+		let output = try results.list.render(withContext: .default)
+		let buffer = ByteBuffer(string: output)
+
+		return Response(status: .ok, body: .init(byteBuffer: buffer))
+	}
+
+	private func search(query: String?) throws -> [URL] {
+		guard
+			let query = query?.emptyIsNil
+		else { return [] }
+
+		let searchEnumerator = try FileManager
+			.default
+			.enumerator(at: baseDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles, .skipsPackageDescendants])
+			.unwrap(orThrow: HTTPError(.internalServerError))
+
+		let queryTerms = query
+			.lowercased()
+			.split(separator: " ")
+			.map(String.init)
+
+		var accumulator: [URL] = []
+
+		for case let fileURL as URL in searchEnumerator {
+			guard
+				fileURL.hasDirectoryPath == false,
+				validMarkdownExtensions.contains(fileURL.pathExtension.lowercased())
+			else { continue }
+			do {
+				try shouldAllowLocalURL(fileURL)
+			} catch {
+				continue
+			}
+
+			let fileContent = try String(decoding: Data(contentsOf: fileURL), as: UTF8.self)
+				.lowercased()
+
+			func match(queryItems: [String], in source: String) -> Bool {
+				for queryItem in queryItems {
+					guard source.contains(queryItem) else { return false }
+				}
+				return true
+			}
+
+			guard
+				match(queryItems: queryTerms, in: fileContent)
+			else { continue }
+
+			accumulator.append(fileURL)
+		}
+
+		return accumulator
 	}
 
 	enum PathType {
@@ -69,10 +125,8 @@ struct NavigatorController<C: RequestContext> {
 		let filteredContent = try contents.nfurcate { url in
 			guard url.lastPathComponent.hasPrefix(".") == false else { return PathType.discard }
 
-			let validExtensions = Set(["md", "markdown"])
-
 			let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
-			if values.isRegularFile == true, validExtensions.contains(url.pathExtension.lowercased()) {
+			if values.isRegularFile == true, validMarkdownExtensions.contains(url.pathExtension.lowercased()) {
 				return PathType.files
 			} else if values.isDirectory == true {
 				return PathType.directories
@@ -88,5 +142,24 @@ struct NavigatorController<C: RequestContext> {
 			path: path,
 			directories: filteredContent[.directories] ?? [],
 			files: filteredContent[.files] ?? [])
+	}
+
+	private let validMarkdownExtensions = Set(["md", "markdown"])
+
+	private func shouldAllowLocalURL(_ fileURL: URL) throws {
+		let absoluteFileURL = fileURL.resolvingSymlinksInPath()
+
+		let filePathComponents = absoluteFileURL.pathComponents
+
+		let baseDirPathLength = baseDirectory.pathComponents.count
+
+		guard
+			filePathComponents.count >= baseDirPathLength,
+			filePathComponents.prefix(upTo: baseDirPathLength) == ArraySlice(baseDirectory.pathComponents),
+			case let fileSpecificComponents = filePathComponents[baseDirPathLength...],
+			fileSpecificComponents.allSatisfy({ $0.hasPrefix(".") == false })
+		else {
+			throw HTTPError(.badRequest, message: "Illegal file request")
+		}
 	}
 }
