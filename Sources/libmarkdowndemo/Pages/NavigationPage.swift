@@ -37,7 +37,9 @@ struct NavigationPage: HTMLContentProvider {
 			Ul {
 				for file in directoryContent.files {
 					Li {
-						A(href: directoryContent.fileLink(file)) { file }
+						A(href: directoryContent.fileLink(file)) {
+							(file as NSString).deletingPathExtension
+						}
 					}
 				}
 			}
