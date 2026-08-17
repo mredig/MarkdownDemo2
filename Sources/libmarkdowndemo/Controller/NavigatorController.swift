@@ -69,8 +69,10 @@ struct NavigatorController<C: RequestContext> {
 		let filteredContent = try contents.nfurcate { url in
 			guard url.lastPathComponent.hasPrefix(".") == false else { return PathType.discard }
 
+			let validExtensions = Set(["md", "markdown"])
+
 			let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey])
-			if values.isRegularFile == true {
+			if values.isRegularFile == true, validExtensions.contains(url.pathExtension.lowercased()) {
 				return PathType.files
 			} else if values.isDirectory == true {
 				return PathType.directories
