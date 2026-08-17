@@ -1,7 +1,8 @@
 import Foundation
 import SwiftGitX
+import SwiftPizzaSnips
 
-class GitController {
+final class GitController: Sendable {
 	let repo: Repository
 
 	let checkoutLocation: URL
@@ -36,6 +37,23 @@ class GitController {
 
 	func gitEmail() async throws -> String? {
 		try await runGitCLIString(["config", "user.email"])
+	}
+
+	nonisolated(unsafe)
+	private static let dateFormatter = ISO8601DateFormatter().with {
+		$0.formatOptions = .withInternetDateTime
+		$0.formatOptions.remove(.withFractionalSeconds)
+	}
+	func getModificationDate(for file: URL) async throws -> Date {
+		guard checkoutLocation.isAParentOf(file) else { throw GitError.invalidFilePath }
+		let gitPath = try URL.relativeFilePath(from: checkoutLocation, to: file)
+
+		let dateString = try await runGitCLIString(["log", "-1", ##"--pretty=%cI"##, gitPath])
+		return dateString.flatMap { Self.dateFormatter.date(from: $0) } ?? .distantPast
+	}
+
+	enum GitError: Error {
+		case invalidFilePath
 	}
 
 	private func runGitCLIString(_ args: [String]) async throws -> String? {

@@ -2,13 +2,16 @@ import Foundation
 import Hummingbird
 
 struct NavigatorController<C: RequestContext> {
-	let baseDirectory: URL
-
 	let siteTitle: String
 
-	init(siteTitle: String, baseDirectory: URL) {
+	let baseDirectory: URL
+
+	let gitController: GitController
+
+	init(siteTitle: String, baseDirectory: URL, gitController: GitController) {
 		self.siteTitle = siteTitle
 		self.baseDirectory = baseDirectory.resolvingSymlinksInPath()
+		self.gitController = gitController
 	}
 
 	func addRoutes(_ group: RouterGroup<C>) {
@@ -26,10 +29,13 @@ struct NavigatorController<C: RequestContext> {
 			let fileURL = baseDirectory
 				.appending(path: path.joined(separator: "/"))
 				.appending(component: file)
+				.resolvingSymlinksInPath()
 
 			try shouldAllowLocalURL(fileURL)
 
-			return try PageTemplate(content: FilePage(breadcrumbPath: path, fileURL: fileURL))
+			let modDate = try await gitController.getModificationDate(for: fileURL)
+
+			return try PageTemplate(content: FilePage(breadcrumbPath: path, fileURL: fileURL, modificationDate: modDate))
 				.response(from: request, context: context)
 		} else {
 			let contents = try contentsOf(path: path)

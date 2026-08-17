@@ -37,8 +37,6 @@ public class LibMarkdownDemo2Entry {
 
 	public let config: Config
 
-	private var gitController: GitController?
-
 	public init(_ config: Config) {
 		self.config = config
 	}
@@ -49,9 +47,9 @@ public class LibMarkdownDemo2Entry {
 
 		logger.info("Using \(config.localCheckoutCache.path(percentEncoded: false)) for local checkout")
 
-		try await checkoutRepo()
+		let gitController = try await checkoutRepo()
 
-		let router = try configureRoutes()
+		let router = try configureRoutes(gitController)
 
 		let config = ApplicationConfiguration(
 			address: .hostname(config.serverAddress, port: Int(config.serverPort)),
@@ -62,7 +60,7 @@ public class LibMarkdownDemo2Entry {
 		try await app.runService()
 	}
 
-	private func configureRoutes() throws -> Router<BasicRequestContext> {
+	private func configureRoutes(_ gitController: GitController) throws -> Router<BasicRequestContext> {
 		let router = Router(context: BasicRequestContext.self, options: .autoGenerateHeadEndpoints)
 
 		router.add(middleware: LogRequestsMiddleware(.info))
@@ -75,7 +73,10 @@ public class LibMarkdownDemo2Entry {
 		try FileManager.default.createDirectory(at: config.localCheckoutCache, withIntermediateDirectories: true)
 
 		let navigationGroup = router.group("/")
-		let navigationController = NavigatorController<BasicRequestContext>(siteTitle: config.serverName, baseDirectory: config.localCheckoutCache)
+		let navigationController = NavigatorController<BasicRequestContext>(
+			siteTitle: config.serverName,
+			baseDirectory: config.localCheckoutCache,
+			gitController: gitController)
 		navigationController.addRoutes(navigationGroup)
 
 		print("Routes:")
@@ -84,11 +85,10 @@ public class LibMarkdownDemo2Entry {
 		return router
 	}
 
-	private func checkoutRepo() async throws {
-		let gitController = try await GitController(
+	private func checkoutRepo() async throws -> GitController {
+		return try await GitController(
 			checkoutLocation: config.localCheckoutCache,
 			remote: config.remoteMarkdownGitRepo)
-		self.gitController = gitController
 	}
 
 	private func createLogger(labelled label: String) -> Logger {
