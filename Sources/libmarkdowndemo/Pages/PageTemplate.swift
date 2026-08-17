@@ -1,23 +1,12 @@
 import Foundation
 import yaHDSL
 
-struct PageTemplate<Content: HTMLContentProvider, FooterContent: HTMLNode>: HTMLPage {
+struct PageTemplate<Content: HTMLContentProvider>: HTMLPage {
 	var title: String { content.title }
 
 	var breadcrumbPath: [String] { content.breadcrumbPath }
 
 	let content: Content
-	let footerContent: FooterContent
-
-	init(content: Content) where FooterContent == Empty {
-		self.content = content
-		self.footerContent = Empty()
-	}
-
-	init(content: Content, footerContent: FooterContent) {
-		self.content = content
-		self.footerContent = footerContent
-	}
 
 	var head: any HeadProtocol {
 		Head {
@@ -81,7 +70,7 @@ struct PageTemplate<Content: HTMLContentProvider, FooterContent: HTMLNode>: HTML
 				
 				Hr()
 
-				footerContent
+				try content.footerContent()
 
 				breadcrumbs
 			}
