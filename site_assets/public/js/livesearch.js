@@ -40,7 +40,7 @@ function showResult(str, updateAttempt) {
 			document.getElementById("markdownRepoLiveSearch").style.border = "1px solid #A5ACB2";
 		}
 	}
-	xmlhttp.open("GET", "livesearch/?search=" + str, true);
+	xmlhttp.open("GET", "livesearch/?search=" + encodeURIComponent(str), true);
 	xmlhttp.send();
 }
 
