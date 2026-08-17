@@ -1,5 +1,5 @@
 {
-  "originHash" : "18b4013ee3b758abef6d0ef39b97fad8b8c0842c11d2916d943e732a8167f716",
+  "originHash" : "0772df8f8ee6447a6d063c350905397407449fa67063ccefecbdc73019bac7f0",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -11,21 +11,21 @@
       }
     },
     {
+      "identity" : "down",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/johnxnguyen/Down.git",
+      "state" : {
+        "revision" : "f34b166be1f1db4aa8f573067e901d72f2a6be57",
+        "version" : "0.11.0"
+      }
+    },
+    {
       "identity" : "hummingbird",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/hummingbird-project/hummingbird",
       "state" : {
         "revision" : "55bc9025a4825ee2a234b1f82b51b87be6ef74e4",
         "version" : "2.26.0"
-      }
-    },
-    {
-      "identity" : "ink",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/JohnSundell/Ink.git",
-      "state" : {
-        "revision" : "bcc9f219900a62c4210e6db726035d7f03ae757b",
-        "version" : "0.6.0"
       }
     },
     {
@@ -285,8 +285,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mredig/yaHDSL.git",
       "state" : {
-        "branch" : "0.0.6b",
-        "revision" : "42f0ce3a978114e6205547ac44d577e8b8c412fe"
+        "branch" : "0.0.6c",
+        "revision" : "33665ad63388a0cf75b7e7723d04dbd16e4645af"
       }
     }
   ],

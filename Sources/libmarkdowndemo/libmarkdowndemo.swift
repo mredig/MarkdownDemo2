@@ -4,7 +4,7 @@ import Logging
 import Synchronization
 
 @MainActor
-public struct LibMarkdownDemo2Entry {
+public class LibMarkdownDemo2Entry {
 	public struct Config: Sendable {
 		public let serverName: String
 		public let serverAddress: String
@@ -37,6 +37,8 @@ public struct LibMarkdownDemo2Entry {
 
 	public let config: Config
 
+	private var gitController: GitController?
+
 	public init(_ config: Config) {
 		self.config = config
 	}
@@ -46,6 +48,8 @@ public struct LibMarkdownDemo2Entry {
 		logger.info("Starting MarkdownDemo2")
 
 		logger.info("Using \(config.localCheckoutCache.path(percentEncoded: false)) for local checkout")
+
+		try await checkoutRepo()
 
 		let router = try configureRoutes()
 
@@ -78,6 +82,13 @@ public struct LibMarkdownDemo2Entry {
 		router.routes.forEach { print($0) }
 
 		return router
+	}
+
+	private func checkoutRepo() async throws {
+		let gitController = try await GitController(
+			checkoutLocation: config.localCheckoutCache,
+			remote: config.remoteMarkdownGitRepo)
+		self.gitController = gitController
 	}
 
 	private func createLogger(labelled label: String) -> Logger {

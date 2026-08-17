@@ -42,6 +42,7 @@ let package = Package(
 //				.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"),
 				"PizzaMacros",
 				.product(name: "Down", package: "down"),
+				"SwiftGitX",
 				.product(name: "yaHDSL", package: "yaHDSL"),
 				.product(name: "yaHDSL-Utilities", package: "yaHDSL"),
 				.product(name: "Logging", package: "swift-log"),
