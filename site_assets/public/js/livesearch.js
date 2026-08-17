@@ -9,13 +9,13 @@ function showResult(str, updateAttempt) {
 
 	var minimumPassingTime = 300;
 
-	if (str.length == 0) {
+	if (str.length === 0) {
 		document.getElementById("markdownRepoLiveSearch").innerHTML = "";
 		document.getElementById("markdownRepoLiveSearch").style.border = "0px";
 		return;
 	}
 	if (timeElapsed < minimumPassingTime) {
-		if (updateAttempt == 1) {
+		if (updateAttempt === 1) {
 			lastAttempt = currentTime;
 		}
 		var thisAttempt = lastAttempt;
@@ -35,7 +35,7 @@ function showResult(str, updateAttempt) {
 		xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
 	}
 	xmlhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
+		if (this.readyState === 4 && this.status === 200) {
 			document.getElementById("markdownRepoLiveSearch").innerHTML = this.responseText;
 			document.getElementById("markdownRepoLiveSearch").style.border = "1px solid #A5ACB2";
 		}
@@ -45,7 +45,7 @@ function showResult(str, updateAttempt) {
 }
 
 function delayedSubmission(timeSubmitted, submission) {
-	if (timeSubmitted == lastAttempt) {
+	if (timeSubmitted === lastAttempt) {
 		showResult(submission, false);
 	}
 }
