@@ -20,6 +20,7 @@ let package = Package(
 		.package(url: "https://github.com/mredig/yaHDSL.git", branch: "0.0.6c"),
 		.package(url: "https://github.com/ibrahimcetin/SwiftGitX.git", from: "0.4.0"),
 		.package(url: "https://github.com/johnxnguyen/Down.git", from: "0.11.0"),
+		.package(url: "https://github.com/mredig/SwiftlyDotEnv.git", from: "0.2.9"),
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -46,6 +47,7 @@ let package = Package(
 				.product(name: "yaHDSL", package: "yaHDSL"),
 				.product(name: "yaHDSL-Utilities", package: "yaHDSL"),
 				.product(name: "Logging", package: "swift-log"),
+				"SwiftlyDotEnv",
 			]
 		)
 	],

@@ -1,5 +1,5 @@
 {
-  "originHash" : "0772df8f8ee6447a6d063c350905397407449fa67063ccefecbdc73019bac7f0",
+  "originHash" : "93ff13adad86839083b12832b62aa4cd993d7620f1967cdfe180bd69b763e4d8",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -269,6 +269,15 @@
       "state" : {
         "revision" : "fcfb71e3dcbbaa70d120b98b7477ce173074aec3",
         "version" : "0.4.0"
+      }
+    },
+    {
+      "identity" : "swiftlydotenv",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mredig/SwiftlyDotEnv.git",
+      "state" : {
+        "revision" : "9357bed1e9c5fec2d6612c2dbc9ccd7a472794cd",
+        "version" : "0.2.9"
       }
     },
     {
