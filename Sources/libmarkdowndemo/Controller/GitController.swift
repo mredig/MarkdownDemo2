@@ -61,15 +61,15 @@ final class GitController: Sendable {
 	}
 
 	@discardableResult
-	private func runGitCLIOutput(_ args: [String], shouldFowardOutputToConsole: Bool = false) async throws -> String? {
+	private func runGitCLIOutput(_ args: [String], shouldFowardOutputToConsole: Bool = true) async throws -> String? {
 		let pipes = try runGitCLI(args)
 
-		func getLines(_ stream: FileHandle.AsyncBytes) async throws -> String {
+		func getLines(_ stream: FileHandle) async throws -> String {
 			var accumulator = ""
 			for try await line in stream.lines {
 				accumulator.append(contentsOf: line)
 				guard shouldFowardOutputToConsole else { continue }
-				print(line)
+				line.emptyIsNil.map { print($0) }
 			}
 
 			return accumulator.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -84,8 +84,8 @@ final class GitController: Sendable {
 	}
 
 	struct CLIOutput: Sendable {
-		let stdOut: FileHandle.AsyncBytes
-		let stdErr: FileHandle.AsyncBytes
+		let stdOut: FileHandle
+		let stdErr: FileHandle
 	}
 
 	@discardableResult
@@ -101,10 +101,11 @@ final class GitController: Sendable {
 		process.standardOutput = pipeOut
 		process.standardError = pipeError
 
-		let output = CLIOutput(stdOut: pipeOut.fileHandleForReading.bytes, stdErr: pipeError.fileHandleForReading.bytes)
+		let output = CLIOutput(stdOut: pipeOut.fileHandleForReading, stdErr: pipeError.fileHandleForReading)
 
 		try process.run()
 
 		return output
 	}
 }
+
