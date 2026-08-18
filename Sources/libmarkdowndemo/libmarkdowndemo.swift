@@ -47,14 +47,23 @@ public class LibMarkdownDemo2Entry {
 
 		logger.info("Using \(config.localCheckoutCache.path(percentEncoded: false)) for local checkout")
 
-		let gitController = try await checkoutRepo()
+		// automatically checks out remote repo
+		let gitController = try await GitController(
+			checkoutLocation: config.localCheckoutCache,
+			remote: config.remoteMarkdownGitRepo,
+			logger: createLogger(labelled: "GitController"))
 
 		let router = try configureRoutes(gitController)
+
+		await setupRepeatingTasks(gitController)
 
 		let config = ApplicationConfiguration(
 			address: .hostname(config.serverAddress, port: Int(config.serverPort)),
 			serverName: config.serverName)
 		let app = Application(router: router, configuration: config, services: [], logger: logger)
+
+		let taskManagerLogger = createLogger(labelled: "Tasks")
+		await TaskManager.start(logger: taskManagerLogger)
 
 		logger.info("Start listening...")
 		try await app.runService()
@@ -85,16 +94,16 @@ public class LibMarkdownDemo2Entry {
 		return router
 	}
 
-	private func checkoutRepo() async throws -> GitController {
-		return try await GitController(
-			checkoutLocation: config.localCheckoutCache,
-			remote: config.remoteMarkdownGitRepo)
-	}
-
 	private func createLogger(labelled label: String) -> Logger {
 		Logger(label: label)
 			.with {
 				$0.logLevel = config.logLevel
 			}
+	}
+
+	private func setupRepeatingTasks(_ gitController: GitController) async {
+		await TaskManager.addTask(labelled: "Pull Updates", frequency: 60.0, initialDelay: .immediate) {
+			try await gitController.pullUpdates()
+		}
 	}
 }

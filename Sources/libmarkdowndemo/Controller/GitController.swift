@@ -1,4 +1,5 @@
 import Foundation
+import Logging
 import SwiftGitX
 import SwiftPizzaSnips
 
@@ -9,7 +10,9 @@ final class GitController: Sendable {
 
 	let remote: URL
 
-	init(checkoutLocation: URL, remote: URL) async throws {
+	let logger: Logger
+
+	init(checkoutLocation: URL, remote: URL, logger: Logger) async throws {
 		let repo: Repository
 		do {
 			repo = try Repository(at: checkoutLocation, createIfNotExists: false)
@@ -21,6 +24,7 @@ final class GitController: Sendable {
 		self.repo = repo
 		self.checkoutLocation = checkoutLocation
 		self.remote = remote
+		self.logger = logger
 
 		if try await gitUserName() == nil {
 			try runGitCLI(["config", "user.name", "MarkdownDemo2"])
@@ -69,7 +73,7 @@ final class GitController: Sendable {
 			for try await line in stream.lines {
 				accumulator.append(contentsOf: line)
 				guard shouldFowardOutputToConsole else { continue }
-				line.emptyIsNil.map { print($0) }
+				line.emptyIsNil.map { logger.debug("subprocess output:", metadata: ["output": "\($0)"]) }
 			}
 
 			return accumulator.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -95,6 +99,9 @@ final class GitController: Sendable {
 		process.executableURL = URL(filePath: "/usr/bin/env")
 		process.arguments = ["git"] + args
 		process.currentDirectoryURL = checkoutLocation
+
+		let loggingString = (process.arguments ?? []).joined(separator: " ")
+		logger.debug("Running subprocess", metadata: ["Command": "\(loggingString)"])
 
 		let pipeOut = stdOut ?? Pipe()
 		let pipeError = stdErr ?? Pipe()
