@@ -23,10 +23,15 @@ RUN swift package resolve
 # Copy entire repo into container
 COPY . .
 
-# Build the application, with optimizations, with static linking, and using jemalloc
+# Build the application, with optimizations and jemalloc.
+#
+# Deliberately NOT passing --static-swift-stdlib: on Linux that flag requires
+# the *entire* transitive dependency graph to be statically linkable, but the
+# libgit2 C target links -lz/-ldl/-lpthread and dlopens OpenSSL at runtime,
+# which is incompatible with a static Swift stdlib. We build dynamically and
+# then capture the exact runtime shared libraries for the minimal run image.
 RUN swift build -c release \
     --product "MarkdownDemo2" \
-    --static-swift-stdlib \
     -Xlinker -ljemalloc
 
 # Switch to the staging area
@@ -34,6 +39,17 @@ WORKDIR /staging
 
 # Copy main executable to staging area
 RUN cp "$(swift build --package-path /build -c release --show-bin-path)/MarkdownDemo2" ./
+
+# Stage the executable's exact runtime shared-library dependencies for the
+# minimal run image. Because the build is dynamic, the binary links the Swift
+# stdlib dylibs (libswiftCore.so, ...) and C libs (libz, libjemalloc, ...).
+# ldd resolves every directly-linked .so; we copy each so the run image can
+# satisfy them. (OpenSSL is dlopen'd by libgit2 at runtime rather than linked,
+# so ldd does not list it; it is installed via apt in the run stage instead.)
+RUN BIN="$(swift build --package-path /build -c release --show-bin-path)/MarkdownDemo2" \
+    && mkdir -p ./libs \
+    && ldd "$BIN" | awk 'NR>1 && $2==">=" {print $3}' | grep -v '^not$' | sort -u \
+    | while read -r lib; do cp -L "$lib" ./libs/; done
 
 # Copy static swift backtracer binary to staging area
 RUN cp "/usr/libexec/swift/linux/swift-backtrace-static" ./
@@ -53,14 +69,18 @@ RUN [ -d /build/site_assets ] && { mv /build/site_assets ./site_assets && chmod 
 FROM ubuntu:noble
 
 # Make sure all system packages are up to date, and install only essential packages.
+# The Swift stdlib dylibs and other directly-linked C runtime libs are copied in
+# from the build stage (resolved via LD_LIBRARY_PATH below), so they are not
+# installed here. libssl3t64 provides OpenSSL (libssl/libcrypto), which libgit2
+# dlopens at runtime for HTTPS cloning and which ldd therefore does not capture.
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true \
     && apt-get -q update \
     && apt-get -q dist-upgrade -y \
     && apt-get -q install -y \
-      libjemalloc2 \
       ca-certificates \
       tzdata \
       git \
+      libssl3t64 \
 # If your app or its dependencies import FoundationNetworking, also install `libcurl4`.
       # libcurl4 \
 # If your app or its dependencies import FoundationXML, also install `libxml2`.
@@ -73,8 +93,12 @@ RUN useradd --user-group --create-home --system --skel /dev/null --home-dir /app
 # Switch to the new home directory
 WORKDIR /app
 
-# Copy built executable and any staged resources from builder
+# Copy built executable, captured shared libs, and any staged resources from builder
 COPY --from=build --chown=hummingbird:hummingbird /staging /app
+
+# Make the captured Swift stdlib dylibs and C runtime libraries (staged in
+# /app/libs) discoverable by the dynamic linker.
+ENV LD_LIBRARY_PATH=/app/libs
 
 # Provide configuration needed by the built-in crash reporter and some sensible default behaviors.
 ENV SWIFT_BACKTRACE=enable=yes,sanitize=yes,threads=all,images=all,interactive=no,swift-backtrace=./swift-backtrace-static
