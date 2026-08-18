@@ -32,11 +32,11 @@ final class GitController: Sendable {
 	}
 
 	func gitUserName() async throws -> String? {
-		try await runGitCLIString(["config", "user.name"])
+		try await runGitCLIOutput(["config", "user.name"])
 	}
 
 	func gitEmail() async throws -> String? {
-		try await runGitCLIString(["config", "user.email"])
+		try await runGitCLIOutput(["config", "user.email"])
 	}
 
 	nonisolated(unsafe)
@@ -48,24 +48,39 @@ final class GitController: Sendable {
 		guard checkoutLocation.isAParentOf(file) else { throw GitError.invalidFilePath }
 		let gitPath = try URL.relativeFilePath(from: checkoutLocation, to: file)
 
-		let dateString = try await runGitCLIString(["log", "-1", ##"--pretty=%cI"##, gitPath])
+		let dateString = try await runGitCLIOutput(["log", "-1", ##"--pretty=%cI"##, gitPath])
 		return dateString.flatMap { Self.dateFormatter.date(from: $0) } ?? .distantPast
+	}
+
+	func pullUpdates() async throws {
+		try await runGitCLIOutput(["pull", "--rebase"], shouldFowardOutputToConsole: true)
 	}
 
 	enum GitError: Error {
 		case invalidFilePath
 	}
 
-	private func runGitCLIString(_ args: [String]) async throws -> String? {
+	@discardableResult
+	private func runGitCLIOutput(_ args: [String], shouldFowardOutputToConsole: Bool = false) async throws -> String? {
 		let pipes = try runGitCLI(args)
 
-		var accumulator = ""
-		for try await line in pipes.stdOut.lines {
-			print(line)
-			accumulator.append(contentsOf: line)
+		func getLines(_ stream: FileHandle.AsyncBytes) async throws -> String {
+			var accumulator = ""
+			for try await line in stream.lines {
+				accumulator.append(contentsOf: line)
+				guard shouldFowardOutputToConsole else { continue }
+				print(line)
+			}
+
+			return accumulator.trimmingCharacters(in: .whitespacesAndNewlines)
 		}
 
-		return accumulator.trimmingCharacters(in: .whitespacesAndNewlines).emptyIsNil
+		async let stdOut = getLines(pipes.stdOut)
+		async let stdErr = getLines(pipes.stdErr)
+
+		_ = try await stdErr
+
+		return try await stdOut.emptyIsNil
 	}
 
 	struct CLIOutput: Sendable {
