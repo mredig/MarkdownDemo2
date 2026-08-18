@@ -1,5 +1,7 @@
 struct EnvKey: RawRepresentable {
 	static let remoteRepo = EnvKey(rawValue: "REMOTE_REPO")
+	static let serverName = EnvKey(rawValue: "SERVER_NAME")
+	static let localCheckoutCache = EnvKey(rawValue: "LOCAL_CHECKOUT_CACHE")
 
 	let rawValue: String
 	

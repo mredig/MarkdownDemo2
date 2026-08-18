@@ -13,7 +13,7 @@ struct MarkdownDemo2: AsyncParsableCommand {
 	var port: UInt16 = 8080
 
 	@Option(name: .shortAndLong)
-	var serverName: String = "MarkdownDemo2"
+	var serverName: String?
 
 	@Option(
 		name: [.customShort("v"), .customLong("verbosity")],
@@ -42,17 +42,17 @@ struct MarkdownDemo2: AsyncParsableCommand {
 
     mutating func run() async throws {
 		let dotEnv = SwiftlyDotEnv<EnvKey>()
-		try SwiftlyDotEnv.loadDotEnv(requiringKeys: ["REMOTE_REPO"])
+		try SwiftlyDotEnv.loadDotEnv(requiringKeys: [EnvKey.remoteRepo.rawValue])
 
 		guard
 			let envRemoteRepo = dotEnv[.remoteRepo].flatMap({ URL(string: $0) })
 		else { throw MarkdownDemoError.invalidRemoteRepo }
 
 		let config = try LibMarkdownDemo2Entry.Config(
-			serverName: serverName,
+			serverName: serverName ?? dotEnv[.serverName] ?? "MarkdownDemo2",
 			serverAddress: address,
 			serverPort: port,
-			localCheckoutCache: localCheckoutCache,
+			localCheckoutCache: localCheckoutCache ?? dotEnv[.localCheckoutCache].flatMap(URL.init(string:)),
 			remoteMarkdownGitRepo: remoteRepo ?? envRemoteRepo,
 			logLevel: verbosityThreshold)
 
