@@ -13,7 +13,7 @@ on:
       - 'v*'
   workflow_dispatch:
 
-# The GITHUB_TOKEN only needs to read the repo (checkout) and push packages to GHCR.
+# The GITHUB_TOKEN only needs to be able to read the repo (checkout) and push packages to GHCR.
 permissions:
   contents: read
   packages: write
@@ -22,20 +22,20 @@ env:
   REGISTRY: ghcr.io
   # GHCR image names must be lowercase, so normalize the repo name.
   # `github.repository` resolves to "owner/repo" at runtime.
-  IMAGE_NAME: ${{ toLower(github.repository) }}
+  IMAGE_NAME: mredig/markdowndemo2
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -43,22 +43,22 @@ jobs:
 
       - name: Extract image metadata (tags + labels)
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # `latest` only on the default branch, so releases never clobber it.
+            # `latest` only on the default branch, so a release never overwrites it.
             type=raw,value=latest,enable={{is_default_branch}}
-            # On a tag push (v*), tag the image with the tag name (e.g. v1.2.3).
+            # On a tag push (v*), tag the image with the tag name (e.g., v1.2.3).
             type=ref,event=tag
             # Always keep a traceable commit-sha tag.
             type=sha
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
-          # Multi-arch: build both and push a single manifest list. The shared
+          # Multi-arch: build both and push a single manifest list. A shared
           # buildx builder reuses common base layers across the two arches.
           platforms: linux/amd64,linux/arm64
           push: true
