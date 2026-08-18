@@ -1,0 +1,26 @@
+# Version control & CI — not needed in the image
+.git
+.gitignore
+.github
+
+# SwiftPM artifacts & scratch — regenerated inside the container during the
+# build; local checkouts are macOS-specific and useless for a Linux image
+.build
+.swiftpm
+Packages
+
+# macOS / Xcode cruft
+.DS_Store
+.AppleDouble
+.LSOverride
+xcuserdata/
+*.xcworkspacedata
+*.xcuserstate
+*.xcuserdatad
+DerivedData/
+
+# Docs & Docker metadata — not needed in the image
+README.md
+Dockerfile
+docker-compose*
+.dockerignore
