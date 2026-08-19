@@ -140,10 +140,13 @@ jobs:
           # so imagetools sees one argument per image).
           amd64_refs="$(printf '%s\n' "$FINAL_TAGS" | sed 's/$/-amd64/' | paste -sd' ' -)"
           arm64_refs="$(printf '%s\n' "$FINAL_TAGS" | sed 's/$/-arm64/' | paste -sd' ' -)"
-          final_csv="$(printf '%s\n' "$FINAL_TAGS" | paste -sd, -)"
-          echo "Assembling: $amd64_refs + $arm64_refs -> $final_csv"
+          echo "Assembling: $amd64_refs + $arm64_refs"
+          # One -t flag per tag: imagetools' -t is a StringArray and does NOT
+          # split comma-separated values into separate tags.
+          tags=()
+          while IFS= read -r t; do tags+=("-t" "$t"); done <<< "$FINAL_TAGS"
           # One multi-arch manifest, tagged with every final tag at once.
-          docker buildx imagetools create -t "$final_csv" $amd64_refs $arm64_refs
+          docker buildx imagetools create "${tags[@]}" $amd64_refs $arm64_refs
 
       - name: Delete per-arch tags
         if: success()
