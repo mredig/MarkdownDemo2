@@ -1,18 +1,38 @@
 name: Docker Publish
 
-# Build the Docker image for linux/amd64 and linux/arm64, and publish a multi-arch
-# manifest to the GitHub Container Registry (GHCR).
+# Build the Docker image on per-arch matrix legs (native amd64 + native arm64
+# runners), push arch-suffixed images, then assemble them into a single
+# multi-arch manifest on the GitHub Container Registry (GHCR).
 #
 # Triggers:
 #   - Pushes to the default (main) branch  -> tags the image `latest` + `<sha>`
 #   - Pushes to a version tag (v*)         -> tags the image `<tag>` + `<sha>`
 #   - Manually, via the "Run workflow" button on the Actions tab
+#
+# Why the matrix + assembly split:
+#   A single buildx invocation building both platforms on one (amd64) runner
+#   has to QEMU-emulate the entire arm64 build, which took ~90 minutes for the
+#   Swift release build alone. Running the arm64 leg on a native arm64 runner
+#   (ubuntu-24.04-arm) brings both legs down to ~12 minutes wall clock.
+#
+#   Trade-off: a registry tag holds exactly one manifest (OCI invariant), so
+#   the two legs must push distinct per-arch tags (`<tag>-amd64` /
+#   `<tag>-arm64`) and a final job merges them with `imagetools create`. This
+#   means the multi-arch tag is published only after BOTH legs succeed (a
+#   short non-atomic window where the per-arch tags exist without the
+#   combined tag) — acceptable for this app.
 on:
   push:
     branches: [main]
     tags:
       - 'v*'
   workflow_dispatch:
+
+# A new push to the same ref cancels the in-flight run, so a stale assemble
+# job can't merge a manifest out of refs a newer run has already overwritten.
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: true
 
 # The GITHUB_TOKEN only needs to be able to read the repo (checkout) and push packages to GHCR.
 permissions:
@@ -26,8 +46,15 @@ env:
   IMAGE_NAME: mredig/markdowndemo2
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+  # Builds and pushes one platform per matrix leg, tagged with the arch
+  # suffix (e.g. `latest-amd64`, `v1.2.3-arm64`, `<sha>-amd64`).
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    # arm64 leg builds natively on an ARM runner; amd64 on the standard ubuntu-latest.
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -55,13 +82,76 @@ jobs:
             # Always keep a traceable commit-sha tag.
             type=sha
 
+      - name: Suffix tags with the arch
+        id: tags
+        env:
+          META_TAGS: ${{ steps.meta.outputs.tags }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          # metadata-action emits one `registry/name:tag` per line; append the
+          # arch suffix to each so both legs share the same tag namespace.
+          suffixed="$(printf '%s\n' "$META_TAGS" | sed "s/\$/-${ARCH}/")"
+          echo "tags=$(printf '%s\n' "$suffixed" | paste -sd, -)" >> "$GITHUB_OUTPUT"
+          echo "Pushing: $(printf '%s\n' "$suffixed" | paste -sd' ' -)"
+
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
           context: .
-          # Multi-arch: build both and push a single manifest list. A shared
-          # buildx builder reuses common base layers across the two arches.
-          platforms: linux/amd64,linux/arm64
+          # Single platform per leg; the arm64 leg runs natively on an ARM runner.
+          platforms: linux/${{ matrix.arch }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  # Merges the two arch-suffixed images into the final multi-arch manifest and
+  # deletes the intermediate per-arch tags.
+  assemble:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata (final tags)
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Identical tag rules to the build legs (sans suffix), so the
+            # assembly job always knows which final tags to (re)point.
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+            type=sha
+
+      - name: Assemble multi-arch manifest
+        env:
+          FINAL_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          # Derive per-arch source refs from the final tag list (space-joined,
+          # so imagetools sees one argument per image).
+          amd64_refs="$(printf '%s\n' "$FINAL_TAGS" | sed 's/$/-amd64/' | paste -sd' ' -)"
+          arm64_refs="$(printf '%s\n' "$FINAL_TAGS" | sed 's/$/-arm64/' | paste -sd' ' -)"
+          final_csv="$(printf '%s\n' "$FINAL_TAGS" | paste -sd, -)"
+          echo "Assembling: $amd64_refs + $arm64_refs -> $final_csv"
+          # One multi-arch manifest, tagged with every final tag at once.
+          docker buildx imagetools create -t "$final_csv" $amd64_refs $arm64_refs
+
+      - name: Delete per-arch tags
+        if: success()
+        env:
+          FINAL_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          # The combined manifest is live; the per-arch tags are now redundant.
+          while IFS= read -r tag; do
+            docker buildx imagetools rm "${tag%-amd64}-amd64"
+            docker buildx imagetools rm "${tag%-arm64}-arm64"
+          done <<< "$(printf '%s' "$FINAL_TAGS")"
