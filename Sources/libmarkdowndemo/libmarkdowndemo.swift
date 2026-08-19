@@ -73,7 +73,7 @@ public class LibMarkdownDemo2Entry {
 	private func configureRoutes(_ gitController: GitController) throws -> Router<BasicRequestContext> {
 		let router = Router(context: BasicRequestContext.self, options: .autoGenerateHeadEndpoints)
 
-		router.add(middleware: LogRequestsMiddleware(.info))
+		router.add(middleware: LogRequestsMiddleware(.info, includeHeaders: .all()))
 //		router.add(middleware: ErrorPage)
 		router.add(middleware: FileMiddleware("site_assets/public"))
 		router.get("/health") { _, _ in
