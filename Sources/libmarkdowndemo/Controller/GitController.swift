@@ -14,12 +14,23 @@ final class GitController: Sendable {
 
 	init(checkoutLocation: URL, remote: URL, logger: Logger) async throws {
 		let repo: Repository
+
+		#if os(Linux)
+		// linux compiling crashes if this isn't specific, but still warns as if it won't crash
+		do {
+			repo = try Repository(at: checkoutLocation, createIfNotExists: false)
+		} catch let error as SwiftGitXError {
+			guard error.code == .notFound, error.category == .repository else { throw error }
+			repo = try await Repository.clone(from: remote, to: checkoutLocation, options: .default, transferProgressHandler: nil)
+		}
+		#else
 		do {
 			repo = try Repository(at: checkoutLocation, createIfNotExists: false)
 		} catch {
 			guard error.code == .notFound, error.category == .repository else { throw error }
 			repo = try await Repository.clone(from: remote, to: checkoutLocation, options: .default, transferProgressHandler: nil)
 		}
+		#endif
 
 		self.repo = repo
 		self.checkoutLocation = checkoutLocation
