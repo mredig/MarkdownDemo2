@@ -47,6 +47,7 @@ public class LibMarkdownDemo2Entry {
 
 		logger.info("Using \(config.localCheckoutCache.path(percentEncoded: false)) for local checkout")
 
+		try FileManager.default.createDirectory(at: config.localCheckoutCache, withIntermediateDirectories: true)
 		// automatically checks out remote repo
 		let gitController = try await GitController(
 			checkoutLocation: config.localCheckoutCache,
@@ -78,8 +79,6 @@ public class LibMarkdownDemo2Entry {
 		router.get("/health") { _, _ in
 			HTTPResponse.Status.ok
 		}
-
-		try FileManager.default.createDirectory(at: config.localCheckoutCache, withIntermediateDirectories: true)
 
 		let navigationGroup = router.group("/")
 		let navigationController = NavigatorController<BasicRequestContext>(
