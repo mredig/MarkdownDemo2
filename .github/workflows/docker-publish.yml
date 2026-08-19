@@ -104,8 +104,12 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # Merges the two arch-suffixed images into the final multi-arch manifest and
-  # deletes the intermediate per-arch tags.
+  # Merges the two arch-suffixed images into the final multi-arch manifest.
+  #
+  # The per-arch tags (`-amd64`/`-arm64`) are intentionally kept: they're a
+  # standard multi-arch convention, add no storage (each just points at a
+  # manifest the index already references), and serve as a rebuild-free
+  # recovery handle if the combined index ever needs to be reassembled.
   assemble:
     needs: build
     runs-on: ubuntu-latest
@@ -147,14 +151,3 @@ jobs:
           while IFS= read -r t; do tags+=("-t" "$t"); done <<< "$FINAL_TAGS"
           # One multi-arch manifest, tagged with every final tag at once.
           docker buildx imagetools create "${tags[@]}" $amd64_refs $arm64_refs
-
-      - name: Delete per-arch tags
-        if: success()
-        env:
-          FINAL_TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          # The combined manifest is live; the per-arch tags are now redundant.
-          while IFS= read -r tag; do
-            docker buildx imagetools rm "${tag%-amd64}-amd64"
-            docker buildx imagetools rm "${tag%-arm64}-arm64"
-          done <<< "$(printf '%s' "$FINAL_TAGS")"
