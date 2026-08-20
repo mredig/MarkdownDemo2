@@ -1,4 +1,5 @@
 import Foundation
+import HTTPTypes
 import Logging
 import Hummingbird
 import SwiftPizzaSnips
@@ -27,7 +28,7 @@ struct IPRateLimiter<Context: RemoteAddressRequestContext>: RouterMiddleware {
 		context: Context,
 		next: (Request, Context) async throws -> Response
 	) async throws -> Response {
-		guard let ipAddress = context.remoteAddress?.ipAddress else {
+		guard let ipAddress = getIPAddress(from: input, context: context) else {
 			logger.warning("Encountered missing client IP address")
 			throw HTTPError(.badRequest, message: "Invalid remote IP address")
 		}
@@ -53,5 +54,15 @@ struct IPRateLimiter<Context: RemoteAddressRequestContext>: RouterMiddleware {
 		}
 
 		return try await next(input, context)
+	}
+
+	private func getIPAddress(from request: Request, context: Context) -> String? {
+		if let fieldName = HTTPField.Name.init(parsed: "x-forwarded-for"), let forwardedFor = request.headers[fieldName] {
+			let ip = forwardedFor.split(separator: ",").first
+			return ip.flatMap(String.init)
+		} else if let ipAddress = context.remoteAddress?.ipAddress {
+			return ipAddress
+		}
+		return nil
 	}
 }
