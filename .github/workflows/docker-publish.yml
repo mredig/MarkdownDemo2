@@ -23,7 +23,7 @@ name: Docker Publish
 #   combined tag) — acceptable for this app.
 on:
   push:
-    branches: [main]
+    # branches: [main]
     tags:
       - 'v*'
   workflow_dispatch:
