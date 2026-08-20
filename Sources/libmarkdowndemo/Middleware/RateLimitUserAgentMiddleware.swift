@@ -5,8 +5,6 @@ import Hummingbird
 import SwiftPizzaSnips
 
 struct RateLimitUserAgentMiddleware<Context: RequestContext>: RouterMiddleware {
-//	nonisolated(unsafe)
-//	let cache: NSwiftCache<String, [Date]>
 	let cache: LinuxCache<String, [Date]>
 
 	let rate: Int

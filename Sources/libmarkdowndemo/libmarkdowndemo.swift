@@ -71,20 +71,21 @@ public class LibMarkdownDemo2Entry {
 		try await app.runService()
 	}
 
-	private func configureRoutes(_ gitController: GitController) throws -> Router<BasicRequestContext> {
-		let router = Router(context: BasicRequestContext.self, options: .autoGenerateHeadEndpoints)
+	private func configureRoutes(_ gitController: GitController) throws -> Router<MyBasicContext> {
+		let router = Router(context: MyBasicContext.self, options: .autoGenerateHeadEndpoints)
 
-		let cache = LinuxCache<String, [Date]>()
-		router.add(middleware: RateLimitUserAgentMiddleware(cache: cache, rate: 5, window: 60, logger: createLogger(labelled: "BotRateLimiter")))
+		let ipAddressCache = LinuxCache<String, [Date]>()
+		router.add(middleware: IPRateLimiter(cache: ipAddressCache, rate: 20, window: 60, logger: createLogger(labelled: "IPRateLimiter")))
+		let botAgentCache = LinuxCache<String, [Date]>()
+		router.add(middleware: RateLimitUserAgentMiddleware(cache: botAgentCache, rate: 5, window: 60, logger: createLogger(labelled: "BotRateLimiter")))
 		router.add(middleware: LogRequestsMiddleware(.info, includeHeaders: .all()))
-//		router.add(middleware: ErrorPage)
 		router.add(middleware: FileMiddleware("site_assets/public"))
 		router.get("/health") { _, _ in
 			HTTPResponse.Status.ok
 		}
 
 		let navigationGroup = router.group("/")
-		let navigationController = NavigatorController<BasicRequestContext>(
+		let navigationController = NavigatorController<MyBasicContext>(
 			siteTitle: config.serverName,
 			baseDirectory: config.localCheckoutCache,
 			gitController: gitController)
