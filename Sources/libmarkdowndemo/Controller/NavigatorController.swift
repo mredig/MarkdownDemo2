@@ -154,7 +154,11 @@ struct NavigatorController<C: RequestContext> {
 	private func contentsOf(path: [String]) throws -> NavigationPage.DirectoryContent {
 		let dir = baseDirectory.appending(path: path.joined(separator: "/"))
 		try shouldAllowLocalURL(dir)
-		let contents = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey])
+		let contents = try attempt({
+			try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey])
+		}, catch: {
+			throw HTTPError(.badRequest, debugMessage: "Got error \($0)", releaseMessage: nil)
+		})
 
 		let filteredContent = try contents.nfurcate { url in
 			guard url.lastPathComponent.hasPrefix(".") == false else { return PathType.discard }
