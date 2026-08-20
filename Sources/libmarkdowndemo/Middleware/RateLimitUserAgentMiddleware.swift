@@ -5,8 +5,9 @@ import Hummingbird
 import SwiftPizzaSnips
 
 struct RateLimitUserAgentMiddleware<Context: RequestContext>: RouterMiddleware {
-	nonisolated(unsafe)
-	let cache: NSwiftCache<String, [Date]>
+//	nonisolated(unsafe)
+//	let cache: NSwiftCache<String, [Date]>
+	let cache: LinuxCache<String, [Date]>
 
 	let rate: Int
 	let window: TimeInterval
@@ -20,6 +21,15 @@ struct RateLimitUserAgentMiddleware<Context: RequestContext>: RouterMiddleware {
 		"facebook",
 	])
 
+	init(cache: LinuxCache<String, [Date]>, rate: Int, window: TimeInterval, logger: Logger) {
+		self.cache = cache
+		self.rate = rate
+		self.window = window
+		self.logger = logger
+
+		logger.info("RateLimit initialized", metadata: ["AllowRate": .stringConvertible(rate), "AccessWindowSeconds": .stringConvertible(window)])
+	}
+
 	func handle(
 		_ input: Request,
 		context: Context,
@@ -30,7 +40,9 @@ struct RateLimitUserAgentMiddleware<Context: RequestContext>: RouterMiddleware {
 			case let userAgent = rawUserAgent.lowercased(),
 			userAgent.count > 10
 		else {
-			logger.debug("Encountered malformed user agent", metadata: ["UserAgent": .string(input.headers[.userAgent] ?? "[missing]")])
+			logger.debug(
+				"Encountered malformed user agent",
+				metadata: ["UserAgent": .string(input.headers[.userAgent] ?? "[missing]")])
 			#if DEBUG
 			throw HTTPError(.badRequest, message: "Legitimate user agent required")
 			#else
@@ -44,6 +56,10 @@ struct RateLimitUserAgentMiddleware<Context: RequestContext>: RouterMiddleware {
 				defer { cacheLock.unlock() }
 
 				var agentHistory = cache[userAgent] ?? []
+				let address = Unmanaged.passUnretained(cache).toOpaque()
+				logger.trace(
+					"Existing history",
+					metadata: ["AccessTimestamps": .stringConvertible(agentHistory), "UserAgent": .string(rawUserAgent), "CacheObject": .stringConvertible("\(address)")])
 				let now = Date.now
 				agentHistory.append(now)
 
@@ -56,6 +72,7 @@ struct RateLimitUserAgentMiddleware<Context: RequestContext>: RouterMiddleware {
 					logger.debug("Rejected rate abusing user agent", metadata: ["UserAgent": .string(rawUserAgent)])
 					throw HTTPError(.tooManyRequests)
 				}
+				logger.trace("Allowing access", metadata: ["AccessTimestamps": .stringConvertible(agentHistory), "UserAgent": .string(rawUserAgent)])
 				break keywordSearch
 			}
 		}

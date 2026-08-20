@@ -74,7 +74,7 @@ public class LibMarkdownDemo2Entry {
 	private func configureRoutes(_ gitController: GitController) throws -> Router<BasicRequestContext> {
 		let router = Router(context: BasicRequestContext.self, options: .autoGenerateHeadEndpoints)
 
-		let cache = NSwiftCache<String, [Date]>(name: "Bot Rate Limit")
+		let cache = LinuxCache<String, [Date]>()
 		router.add(middleware: RateLimitUserAgentMiddleware(cache: cache, rate: 5, window: 60, logger: createLogger(labelled: "BotRateLimiter")))
 		router.add(middleware: LogRequestsMiddleware(.info, includeHeaders: .all()))
 //		router.add(middleware: ErrorPage)
