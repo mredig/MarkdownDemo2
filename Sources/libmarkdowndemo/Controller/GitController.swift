@@ -38,12 +38,12 @@ final class GitController: Sendable {
 		$0.formatOptions = .withInternetDateTime
 		$0.formatOptions.remove(.withFractionalSeconds)
 	}
-	func getModificationDate(for file: URL) async throws -> Date {
+	func getModificationDate(for file: URL) async throws -> Date? {
 		guard checkoutLocation.isAParentOf(file) else { throw GitError.invalidFilePath }
 		let gitPath = try URL.relativeFilePath(from: checkoutLocation, to: file)
 
 		let dateString = try await runGitCLIOutput(["log", "-1", ##"--pretty=%cI"##, gitPath])
-		return dateString.flatMap { Self.dateFormatter.date(from: $0) } ?? .distantPast
+		return dateString.flatMap { Self.dateFormatter.date(from: $0) }
 	}
 
 	func pullUpdates() async throws {

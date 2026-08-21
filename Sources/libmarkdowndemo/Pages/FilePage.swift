@@ -11,7 +11,7 @@ struct FilePage: HTMLContentProvider {
 	let breadcrumbPath: [String]
 
 	let fileURL: URL
-	let modificationDate: Date
+	let modificationDate: Date?
 
 	var title: String { fileURL.lastPathComponent }
 
@@ -41,7 +41,8 @@ struct FilePage: HTMLContentProvider {
 	}
 
 	func footerContent() throws -> any HTMLNode {
-		P("this document last modified: \(Self.dateFormatter.string(from: modificationDate))")
+		let formattedDate = modificationDate.map(Self.dateFormatter.string(from:)) ?? "Unknown Date"
+		P("this document last modified: \(formattedDate)")
 			.addClass("mdrTimestamp")
 	}
 }
