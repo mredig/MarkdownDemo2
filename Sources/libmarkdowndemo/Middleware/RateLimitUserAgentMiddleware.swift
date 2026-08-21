@@ -67,7 +67,7 @@ struct RateLimitUserAgentMiddleware<Context: RequestContext>: RouterMiddleware {
 				cache[userAgent] = agentHistory
 
 				guard agentHistory.count <= rate else {
-					logger.debug("Rejected rate abusing user agent", metadata: ["UserAgent": .string(rawUserAgent)])
+					logger.info("Rejected rate abusing user agent", metadata: ["UserAgent": .string(rawUserAgent)])
 					throw HTTPError(.tooManyRequests)
 				}
 				logger.trace("Allowing access", metadata: ["AccessTimestamps": .stringConvertible(agentHistory), "UserAgent": .string(rawUserAgent)])

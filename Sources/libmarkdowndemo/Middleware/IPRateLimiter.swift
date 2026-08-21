@@ -47,7 +47,7 @@ struct IPRateLimiter<Context: RemoteAddressRequestContext>: RouterMiddleware {
 			cache[ipAddress] = ipAccessHistory
 
 			guard ipAccessHistory.count <= rate else {
-				logger.debug("Rejected rate abusing ip address", metadata: ["IP": .string(ipAddress)])
+				logger.info("Rejected rate abusing ip address", metadata: ["IP": .string(ipAddress)])
 				throw HTTPError(.tooManyRequests)
 			}
 			logger.trace("Allowing access", metadata: ["AccessTimestamps": .stringConvertible(ipAccessHistory), "UserAgent": .string(ipAddress)])
