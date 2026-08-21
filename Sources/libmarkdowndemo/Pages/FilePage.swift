@@ -1,5 +1,6 @@
-import Foundation
 import Down
+import Foundation
+import Hummingbird
 import yaHDSL
 
 struct FilePage: HTMLContentProvider {
@@ -18,12 +19,21 @@ struct FilePage: HTMLContentProvider {
 	private static let imageRegex = /img src="(?<imageName>.*(png|jpg|gif))"/.ignoresCase()
 
 	func content() throws -> Group {
-		let markdownData = try Data(contentsOf: fileURL)
+		let markdownData = try attempt({
+			try Data(contentsOf: fileURL)
+		}, catch: {
+			throw HTTPError(.badRequest, debugError: $0)
+		})
+
 		let markdownString = String(decoding: markdownData, as: UTF8.self)
 
 		let down = Down(markdownString: markdownString)
 
-		let html = try down.toHTML([.default])
+		let html = try attempt({
+			try down.toHTML([.default])
+		}, catch: {
+			throw HTTPError(.internalServerError, debugError: $0, releaseMessage: "Markdown error")
+		})
 
 		html.replacing(Self.imageRegex) { match in
 			"img src=\"/image?directory=\(breadcrumbPath.joined(separator: "/"))&file=\(match.output.imageName)\""
