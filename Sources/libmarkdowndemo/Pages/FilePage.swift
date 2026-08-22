@@ -1,6 +1,6 @@
-import Down
 import Foundation
 import Hummingbird
+import Markdown
 import yaHDSL
 
 struct FilePage: HTMLContentProvider {
@@ -19,24 +19,17 @@ struct FilePage: HTMLContentProvider {
 	private static let imageRegex = /img src="(?<imageName>.*(png|jpg|gif))"/.ignoresCase()
 
 	func content() throws -> Group {
-		let markdownData = try attempt({
-			try Data(contentsOf: fileURL)
+		let markdownDocument = try attempt({
+			try Document(parsing: fileURL)
 		}, catch: {
 			throw HTTPError(.badRequest, debugError: $0)
 		})
 
-		let markdownString = String(decoding: markdownData, as: UTF8.self)
-
-		let down = Down(markdownString: markdownString)
-
-		let html = try attempt({
-			try down.toHTML([.default])
-		}, catch: {
-			throw HTTPError(.internalServerError, debugError: $0, releaseMessage: "Markdown error")
-		})
-
-		html.replacing(Self.imageRegex) { match in
-			"img src=\"/image?directory=\(breadcrumbPath.joined(separator: "/"))&file=\(match.output.imageName)\""
+		var imageLinker = ImageLinker(breadcrumbPath: breadcrumbPath.joined(separator: "/"))
+		if let cleanDocument = imageLinker.visit(markdownDocument) {
+			HTMLFormatter.format(cleanDocument, options: .parseInlineAttributeClass)
+		} else {
+			throw HTTPError(.badRequest, debugMessage: "image linker failed")
 		}
 	}
 
@@ -44,5 +37,20 @@ struct FilePage: HTMLContentProvider {
 		let formattedDate = modificationDate.map(Self.dateFormatter.string(from:)) ?? "Unknown Date"
 		P("this document last modified: \(formattedDate)")
 			.addClass("mdrTimestamp")
+	}
+}
+
+private struct ImageLinker: MarkupRewriter {
+	let breadcrumbPath: String
+
+	func visitImage(_ image: Image) -> Optional<any Markup> {
+		guard let imageName = image.source else {
+			return image
+		}
+
+		var fixed = image
+		fixed.source = "/image?directory=\(breadcrumbPath)&file=\(imageName)"
+
+		return fixed
 	}
 }

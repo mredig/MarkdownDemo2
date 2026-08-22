@@ -14,9 +14,9 @@ let package = Package(
 		.package(url: "https://github.com/mredig/SwiftPizzaSnips.git", .upToNextMajor(from: "0.5.0")),
 		.package(url: "https://github.com/hummingbird-project/hummingbird", .upToNextMajor(from: "2.26.0")),
 		.package(url: "https://github.com/mredig/PizzaMacros.git", .upToNextMajor(from: "0.1.0")),
-		.package(url: "https://github.com/mredig/yaHDSL.git", branch: "0.0.6d"),
-		.package(url: "https://github.com/johnxnguyen/Down.git", from: "0.11.0"),
+		.package(url: "https://github.com/mredig/yaHDSL.git", branch: "0.0.6f"),
 		.package(url: "https://github.com/mredig/SwiftlyDotEnv.git", from: "0.2.9"),
+		.package(url: "https://github.com/swiftlang/swift-markdown.git", .upToNextMajor(from: "0.8.0")),
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -34,7 +34,7 @@ let package = Package(
 				"SwiftPizzaSnips",
 				.product(name: "Hummingbird", package: "hummingbird"),
 				"PizzaMacros",
-				.product(name: "Down", package: "down"),
+				.product(name: "Markdown", package: "swift-markdown"),
 				.product(name: "yaHDSL", package: "yaHDSL"),
 				.product(name: "yaHDSL-Utilities", package: "yaHDSL"),
 				.product(name: "Logging", package: "swift-log"),
