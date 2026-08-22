@@ -14,7 +14,7 @@ let package = Package(
 		.package(url: "https://github.com/mredig/SwiftPizzaSnips.git", .upToNextMajor(from: "0.5.0")),
 		.package(url: "https://github.com/hummingbird-project/hummingbird", .upToNextMajor(from: "2.26.0")),
 		.package(url: "https://github.com/mredig/PizzaMacros.git", .upToNextMajor(from: "0.1.0")),
-		.package(url: "https://github.com/mredig/yaHDSL.git", branch: "0.0.6c"),
+		.package(url: "https://github.com/mredig/yaHDSL.git", branch: "0.0.6d"),
 		.package(url: "https://github.com/johnxnguyen/Down.git", from: "0.11.0"),
 		.package(url: "https://github.com/mredig/SwiftlyDotEnv.git", from: "0.2.9"),
 	],
