@@ -74,6 +74,7 @@ public class LibMarkdownDemo2Entry {
 	private func configureRoutes(_ gitController: GitController) throws -> Router<MyBasicContext> {
 		let router = Router(context: MyBasicContext.self, options: .autoGenerateHeadEndpoints)
 
+		router.add(middleware: ErrorPageMiddleware())
 		let ipAddressCache = LinuxCache<String, [Date]>()
 		router.add(middleware: IPRateLimiter(cache: ipAddressCache, rate: 20, window: 60, logger: createLogger(labelled: "IPRateLimiter")))
 		let botAgentCache = LinuxCache<String, [Date]>()
